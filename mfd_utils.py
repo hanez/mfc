@@ -67,7 +67,7 @@ def print_hexstring(str_: str, columns: int = 32, group_by: int = 4) -> None:
 
 
 def bytes_to_hexstring(b: bytes) -> str:
-    return ''.join(f'{byte:02x}' for byte in b)
+    return ''.join(f'{byte:02x}' for byte in b).upper()
 
 
 # noinspection PyShadowingBuiltins
@@ -79,13 +79,37 @@ def print(filename: str) -> None:
 
 
 def mct_mfd(in_filename: str, out_filename: str) -> None:
-    with open(in_filename) as in_, open(out_filename, 'wb') as out:
-        out.write(bytes.fromhex(''.join(line.strip() for line in in_ if not line.startswith('+'))))
+    with open(in_filename, encoding='ascii') as in_, open(out_filename, 'wb') as out:
+
+        # for each header and the following 4 lines in the file
+        #   key: Keep only the index of the sector as int
+        #   value: A hex string representing the sector data
+
+        sectors: MutableMapping[int, str] = {
+            int(header.strip().replace('+Sector: ', '')): ''.join(line.strip() for line in data)
+            for header, *data in zip(*(iter(in_),) * (1 + 4))
+        }
+
+        # write joined data for each of the 16 sectors
+        out.write(bytes.fromhex(''.join(sectors[sector] for sector in range(16))))
+
+
+def mfd_mct(in_filename: str, out_filename: str) -> None:
+    with open(in_filename, 'rb') as in_, open(out_filename, 'w+', encoding='ascii') as out:
+        # Create 16 sectors sections, each with a header and data
+        for sector in range(16):
+            out.write(f'+Sector: {sector}\n')
+
+            for _ in range(4):  # 4 lines of data per sector
+                out.write(bytes_to_hexstring(in_.read(16)) + '\n')
+
+        out.truncate(2372)  # removing the last \n. 2372 is the size in bytes of a complete mct file.
 
 
 script: Script = Script(
     print,
-    mct_mfd
+    mct_mfd,
+    mfd_mct
 )
 
 
