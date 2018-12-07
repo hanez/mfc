@@ -1,100 +1,96 @@
 import inspect
 import sys
 from collections import namedtuple
-from typing import Callable, MutableMapping, Tuple, Iterator, ClassVar, Optional, Any, IO
-
-python_print: Callable[[Tuple[Any, ...], str, str, Optional[IO[str]], bool], None] = print
 
 
-class Script(object):
-    BASE_COMMAND: ClassVar[str] = f'python3 {__file__}'
-    CommandProperties: ClassVar[namedtuple] = namedtuple('CommandProperties', ('args', 'callable'))
+class Script:
+    BASE_COMMAND = f'python3 {__file__}'
+    CommandProperties = namedtuple('CommandProperties', ('args', 'callable'))
 
-    def __init__(self, *commands: Callable[..., None]):
-
-        # noinspection PyCallByClass
-        self.commands: MutableMapping[str, Script.CommandProperties] = {
+    def __init__(self, *commands):
+        self.commands = {
             command.__name__: Script.CommandProperties(
                 tuple(inspect.signature(command).parameters.keys()),
                 command
             ) for command in commands
         }
 
-    def usage(self) -> None:
-        python_print()
+    def usage(self):
+        print()
 
-        python_print('Usage:')
+        print('Usage:')
         for name, properties in self.commands.items():
-            python_print('\t' + ' '.join(
+            print('\t' + ' '.join(
                 (Script.BASE_COMMAND, name) + tuple(f'<{arg}>' for arg in properties.args)
             ))
 
-        python_print()
+        print()
         exit()
 
-    def check_args(self, args: Tuple[str], n: int = 0, exact: bool = True) -> None:
-        n += 2  # Script name is always passed and command must be passed every time
-
-        if len(args) < n or exact and len(args) != n:
+    def call(self, args):
+        if len(args) < 2:  # program name and command
             self.usage()
 
-    def call(self, args: Tuple[str]) -> None:
-        self.check_args(args, exact=False)
-
-        command: Script.CommandProperties
         try:
             command = self.commands[args[1]]
         except KeyError:
             self.usage()
 
-        self.check_args(args, len(command.args))
+        if len(args) != 2 + len(command.args):
+            self.usage()
 
         command.callable(*args[2:])
 
 
-def print_hexstring(str_: str, columns: int = 32, group_by: int = 4) -> None:
-    i: Iterator[str] = iter(str_)
+def grouper(iterable, n):
+    "Collect data into fixed-length chunks or blocks"
+    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+    args = [iter(iterable)] * n
+    return zip(*args)
+
+
+def print_hexstring(str, columns, group_by):
+    i = iter(str)
 
     while True:
         for _ in range(group_by):
             for _ in range(columns):
                 try:
-                    python_print(next(i), end='')
+                    print(next(i), end='')
                 except StopIteration:
                     return
-            python_print()
-        python_print()
+            print()
+        print()
 
 
-def bytes_to_hexstring(b: bytes) -> str:
+def bytes_to_hexstring(b):
     return ''.join(f'{byte:02x}' for byte in b).upper()
 
 
-# noinspection PyShadowingBuiltins
-def print(filename: str) -> None:
-    python_print()
+def print_mfd(filename):
+    print()
 
     with open(filename, 'rb') as f:
-        print_hexstring(bytes_to_hexstring(f.read()))
+        print_hexstring(bytes_to_hexstring(f.read()), 32, 4)
 
 
-def mct_mfd(in_filename: str, out_filename: str) -> None:
+def mct_mfd(in_filename, out_filename):
     with open(in_filename, encoding='ascii') as in_, open(out_filename, 'wb') as out:
 
         # for each header and the following 4 lines in the file
         #   key: Keep only the index of the sector as int
         #   value: A hex string representing the sector data
 
-        sectors: MutableMapping[int, str] = {
-            int(header.strip().replace('+Sector: ', '')): ''.join(line.strip() for line in data)
-            for header, *data in zip(*(iter(in_),) * (1 + 4))
+        sectors = {
+            int(header.strip().replace('+Sector: ', '')): ''.join(map(str.strip, data))
+            for header, *data in grouper(in_, 1 + 4)
         }
 
         # write joined data for each of the 16 sectors
-        out.write(bytes.fromhex(''.join(sectors[sector] for sector in range(16))))
+        out.write(bytes.fromhex(''.join(map(sectors.get, range(16)))))
 
 
-def mfd_mct(in_filename: str, out_filename: str) -> None:
+def mfd_mct(in_filename, out_filename):
     with open(in_filename, 'rb') as in_, open(out_filename, 'w+', encoding='ascii') as out:
         # Create 16 sectors sections, each with a header and data
         for sector in range(16):
@@ -106,10 +102,26 @@ def mfd_mct(in_filename: str, out_filename: str) -> None:
         out.truncate(2372)  # removing the last \n. 2372 is the size in bytes of a complete mct file.
 
 
+def mct_c(filename):
+    with open(filename, encoding='ascii') as f:
+        sectors = (
+            map(''.join, grouper(line, 2))
+            for _, *data in grouper(f, 1 + 4)
+            for line in data
+        )
+
+        print()
+        print('byte data[64][16] = {')
+        print(',\n'.join(f'  {{{", ".join("0x" + byte for byte in sector)}}}' for sector in sectors))
+        print('};')
+        print()
+
+
 script: Script = Script(
-    print,
+    print_mfd,
     mct_mfd,
-    mfd_mct
+    mfd_mct,
+    mct_c
 )
 
 
