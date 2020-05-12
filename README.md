@@ -20,7 +20,7 @@ A converter for various file format used to store MIFARE dumps and related data.
 
 | Name | Description |
 | ---- | ----------- |
-| mfd | libnfc tool (binary) |
+| mfd | [libnfc](https://github.com/nfc-tools/libnfc) utils (binary) |
 | mct | [Mifare Classic Tools](https://github.com/ikarus23/MifareClassicTool) |
 | c | C (programming language) matrix |
 | keys | unique keys in plain text, one for each line |
