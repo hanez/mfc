@@ -1,6 +1,6 @@
 # MFC - MiFare classic Converter
 
-A converter for various file format used to store MIFARE dumps and related data.
+A converter for various file formats used to store MIFARE dumps and related data.
 
 	usage: mfc.py [-h] [-s] {mfd,mct} {mfd,mct,c,keys} input_path output_path
 
