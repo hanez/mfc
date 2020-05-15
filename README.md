@@ -2,7 +2,7 @@
 
 A converter for various file formats used to store MIFARE dumps and related data.
 
-	usage: mfc.py [-h] [-s] {mfd,mct} {mfd,mct,c,keys} input_path output_path
+	usage: mfc.py [-h] [-s] [-f] {mfd,mct} {mfd,mct,c,keys} input_path output_path
 
 	MFC - MiFare classic Converter
 
