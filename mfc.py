@@ -43,10 +43,14 @@ def grouper(iterable, n):
     return zip(*args)
 
 
-def load_mfd(path):
+def load_mfd(path, fuzzy):
     size  = os.path.getsize(path)
 
-    size == 1024 or error(f'Invalid file size ({size}). Only 1024 bytes allowed.')
+    if fuzzy:
+        size >= 1024 or error(f'Invalid file size ({size}). At least 1024 bytes required.')
+
+    else:
+        size == 1024 or error(f'Invalid file size ({size}). Only 1024 bytes allowed.')
 
     with open(path, 'rb') as f:
         for _ in range(16):
@@ -169,7 +173,7 @@ def store_keys(dump, path):
 
 def convert(args):
     if args.input_format == 'mfd':
-        dump = load_mfd(args.input_path)
+        dump = load_mfd(args.input_path, args.fuzzy)
 
     elif args.input_format == 'mct':
         dump = load_mct(args.input_path)
@@ -197,6 +201,7 @@ def main():
     parser.add_argument('input_path')
     parser.add_argument('output_path')
     parser.add_argument('-s', '--strict', action='store_true', help='Fail on missing data (otherwise filled with zeros)')
+    parser.add_argument('-f', '--fuzzy', action='store_true', help='Accept file sizes >= 1024 for mfd format')
 
     args = parser.parse_args()
 

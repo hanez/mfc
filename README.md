@@ -15,6 +15,7 @@ A converter for various file format used to store MIFARE dumps and related data.
 	optional arguments:
 	  -h, --help        show this help message and exit
 	  -s, --strict      Fail on missing data (otherwise filled with zeros)
+	  -f, --fuzzy       Accept file sizes >= 1024 for mfd format
 
 ## Formats descriptions:
 
