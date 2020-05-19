@@ -23,5 +23,5 @@ A converter for various file formats used to store MIFARE dumps and related data
 | ---- | ----------- |
 | mfd | [libnfc](https://github.com/nfc-tools/libnfc) utils (binary) |
 | mct | [Mifare Classic Tools](https://github.com/ikarus23/MifareClassicTool) |
-| c | C (programming language) matrix |
+| c | C (programming language) matrix (legacy for [Scribe](https://github.com/hexwell/scribe) |
 | keys | unique keys in plain text, one for each line |
